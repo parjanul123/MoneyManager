@@ -1,0 +1,91 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}{{ account.name }} - Money Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">{{ account.name }}</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Detalii Cont</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Tip:</strong> {{ account.get_type_display }}</p>
+                <p><strong>Monedă:</strong> {{ account.currency }}</p>
+                <p><strong>Sold:</strong> <span class="h4">{{ account.balance|floatformat:2 }}</span></p>
+                <p><small class="text-muted">Creat: {{ account.created_at|date:"d.m.Y H:i" }}</small></p>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{% url 'finance:account_edit' account.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editare
+                    </a>
+                    <a href="{% url 'finance:account_delete' account.pk %}" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Ștergere
+                    </a>
+                    <a href="{% url 'finance:account_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Înapoi
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if transactions %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Tranzacții Recente</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data</th>
+                                <th>Categorie</th>
+                                <th>Descriere</th>
+                                <th>Tip</th>
+                                <th class="text-end">Suma</th>
+                                <th>Acțiuni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.date|date:"d.m.Y" }}</td>
+                                    <td>{{ transaction.category.name }}</td>
+                                    <td>{{ transaction.description }}</td>
+                                    <td>
+                                        <span class="badge {% if transaction.type == 'expense' %}bg-danger{% else %}bg-success{% endif %}">
+                                            {{ transaction.get_type_display }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end {% if transaction.type == 'expense' %}expense{% else %}income{% endif %}">
+                                        <strong>{{ transaction.amount|floatformat:2 }}</strong>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'finance:transaction_edit' transaction.pk %}" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'finance:transaction_delete' transaction.pk %}" class="btn btn-sm btn-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,247 @@
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmare Discord - Money Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .confirmation-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+        }
+
+        .confirmation-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .confirmation-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .confirmation-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .confirmation-header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .confirmation-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .confirmation-body {
+            padding: 40px 30px;
+        }
+
+        .confirmation-message {
+            background: #f0f2ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .confirmation-message h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .confirmation-message p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .discord-info {
+            background: #5865F2;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .discord-info svg {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+        }
+
+        .discord-info p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .btn-confirm {
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-cancel {
+            width: 100%;
+            padding: 14px 24px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+
+        .btn-cancel:hover {
+            border-color: #c0c0c0;
+            background: #e8e8e8;
+        }
+
+        .confirmation-footer {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .confirmation-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            .confirmation-container {
+                padding: 15px;
+            }
+
+            .confirmation-header {
+                padding: 30px 20px;
+            }
+
+            .confirmation-header h1 {
+                font-size: 24px;
+            }
+
+            .confirmation-body {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="confirmation-container">
+        <div class="confirmation-card">
+            <!-- Header -->
+            <div class="confirmation-header">
+                <div class="confirmation-icon">🔐</div>
+                <h1>Money Manager</h1>
+                <p>Confirmare conectare</p>
+            </div>
+
+            <!-- Body -->
+            <div class="confirmation-body">
+                <div class="confirmation-message">
+                    <h3>🎉 Gata aproape!</h3>
+                    <p>Ești pe cale să te conectezi folosind contul tău Discord</p>
+                </div>
+
+                <div class="discord-info">
+                    <svg fill="white" viewBox="0 0 24 24">
+                        <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.211.375-.445.864-.607 1.25a18.27 18.27 0 00-5.487 0c-.163-.386-.395-.875-.607-1.25a.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994.021-.04.001-.088-.041-.104a13.107 13.107 0 01-1.872-.892.083.083 0 01-.008-.138c.126-.094.252-.192.372-.291a.078.078 0 01.084-.011c3.928 1.793 8.18 1.793 12.062 0a.079.079 0 01.084.01c.12.099.246.198.373.292a.083.083 0 01-.006.137 12.299 12.299 0 01-1.873.892.082.082 0 01-.041.105c.352.699.764 1.365 1.225 1.994a.082.082 0 00.084.028 19.963 19.963 0 006.002-3.03.082.082 0 00.032-.056c.44-4.408-.758-8.889-3.207-12.658a.06.06 0 00-.031-.028zM8.02 15.33c-1.183 0-2.157-.965-2.157-2.156 0-1.193.974-2.157 2.157-2.157 1.183 0 2.157.964 2.157 2.157 0 1.191-.974 2.156-2.157 2.156zm7.975 0c-1.183 0-2.157-.965-2.157-2.156 0-1.193.974-2.157 2.157-2.157 1.183 0 2.157.964 2.157 2.157 0 1.191-.974 2.156-2.157 2.156z"/>
+                    </svg>
+                    <p>Conectare cu Discord</p>
+                </div>
+
+                <!-- Confirmation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-confirm">
+                        ✓ Continuă Conectarea
+                    </button>
+                </form>
+
+                <a href="/" class="btn-cancel">
+                    ✕ Anulează
+                </a>
+            </div>
+
+            <!-- Footer -->
+            <div class="confirmation-footer">
+                Datele tale sunt securizate și nu vor fi partajate.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

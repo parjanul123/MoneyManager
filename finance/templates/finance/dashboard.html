@@ -1,0 +1,173 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Dashboard - Money Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">Dashboard</h1>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h3>Sold Total</h3>
+            <div class="value">{{ total_balance|floatformat:2 }} RON</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card income">
+            <h3>Venituri (Luna)</h3>
+            <div class="value">{{ total_income|floatformat:2 }} RON</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card expense">
+            <h3>Cheltuieli (Luna)</h3>
+            <div class="value">{{ total_expenses|floatformat:2 }} RON</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h3>Net (Luna)</h3>
+            <div class="value {% if net_income >= 0 %}income{% else %}expense{% endif %}">
+                {{ net_income|floatformat:2 }} RON
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Accounts -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-bank"></i> Conturile Mele</h5>
+            </div>
+            <div class="card-body">
+                {% if accounts %}
+                    <div class="list-group">
+                        {% for account in accounts %}
+                            <a href="{% url 'finance:account_detail' account.pk %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ account.name }}</h6>
+                                        <small class="text-muted">{{ account.get_type_display }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong>{{ account.balance|floatformat:2 }} {{ account.currency }}</strong>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                    <a href="{% url 'finance:account_create' %}" class="btn btn-primary btn-sm mt-3">
+                        <i class="bi bi-plus"></i> Cont Nou
+                    </a>
+                {% else %}
+                    <p class="text-muted">Nu ai conturi. <a href="{% url 'finance:account_create' %}">Creează unul acum</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Tranzacții Recente</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_transactions %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Categorie</th>
+                                    <th>Tip</th>
+                                    <th class="text-end">Suma</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in recent_transactions %}
+                                    <tr>
+                                        <td>{{ transaction.date|date:"d.m.Y" }}</td>
+                                        <td>{{ transaction.category.name }}</td>
+                                        <td>
+                                            <span class="badge {% if transaction.type == 'expense' %}bg-danger{% else %}bg-success{% endif %}">
+                                                {{ transaction.get_type_display }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end {% if transaction.type == 'expense' %}expense{% else %}income{% endif %}">
+                                            <strong>{{ transaction.amount|floatformat:2 }}</strong>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{% url 'finance:transaction_list' %}" class="btn btn-primary btn-sm">
+                        Vezi Toate
+                    </a>
+                {% else %}
+                    <p class="text-muted">Nu ai tranzacții. <a href="{% url 'finance:transaction_create' %}">Adaugă una acum</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budgets -->
+{% if budgets %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Bugete Lunare</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Categorie</th>
+                                <th>Buget</th>
+                                <th>Cheltuit</th>
+                                <th>Rămas</th>
+                                <th>Progres</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for budget in budgets %}
+                                <tr>
+                                    <td>{{ budget.category.name }}</td>
+                                    <td>{{ budget.amount|floatformat:2 }} RON</td>
+                                    <td>{{ budget.spent|floatformat:2 }} RON</td>
+                                    <td>{{ budget.remaining|floatformat:2 }} RON</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar {% if budget.percentage > 100 %}bg-danger{% elif budget.percentage > 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                 role="progressbar" 
+                                                 style="width: {{ budget.percentage|floatformat:0 }}%">
+                                                {{ budget.percentage|floatformat:0 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<a href="{% url 'finance:transaction_create' %}" class="btn btn-primary btn-lg">
+    <i class="bi bi-plus-circle"></i> Adauga Tranzactie
+</a>
+{% endblock %}

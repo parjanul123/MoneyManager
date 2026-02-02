@@ -1,0 +1,53 @@
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User
+from allauth.socialaccount.models import SocialAccount
+from .models import UserProfile
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Crează profil utilizator la înregistrare"""
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Salvează profilul utilizatorului"""
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
+
+
+@receiver(post_save, sender=SocialAccount)
+def update_user_profile_from_discord(sender, instance, created, update_fields, **kwargs):
+    """Actualizează profilul utilizatorului cu date de Discord la conectare"""
+    if instance.provider == 'discord':
+        try:
+            user = instance.user
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            
+            # Extrage date din Discord
+            extra_data = instance.extra_data
+            
+            # Actualizează avatar URL
+            if 'avatar' in extra_data:
+                avatar_hash = extra_data['avatar']
+                discord_id = extra_data.get('id', '')
+                profile.avatar_url = f"https://cdn.discordapp.com/avatars/{discord_id}/{avatar_hash}.png"
+            
+            # Actualizează username și Discord ID
+            if 'username' in extra_data:
+                profile.discord_username = extra_data['username']
+            
+            if 'id' in extra_data:
+                profile.discord_id = extra_data['id']
+            
+            # Actualizează user.first_name și last_name din Discord
+            if 'username' in extra_data:
+                user.first_name = extra_data.get('username', '')
+                user.save()
+            
+            profile.save()
+        except Exception as e:
+            print(f"Eroare actualizare profil Discord: {e}")

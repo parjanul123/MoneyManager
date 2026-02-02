@@ -1,0 +1,113 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Tranzacții - Money Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Tranzacții</h1>
+            <a href="{% url 'finance:transaction_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Tranzacție Nouă
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Filtrare</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        {{ form.account }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.category }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.type }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.start_date }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.end_date }}
+                    </div>
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Caută
+                        </button>
+                        <a href="{% url 'finance:transaction_list' %}" class="btn btn-secondary">
+                            Resetare
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+{% if transactions %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cont</th>
+                                    <th>Categorie</th>
+                                    <th>Descriere</th>
+                                    <th>Tip</th>
+                                    <th class="text-end">Suma</th>
+                                    <th>Acțiuni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                    <tr>
+                                        <td>{{ transaction.date|date:"d.m.Y" }}</td>
+                                        <td>{{ transaction.account.name }}</td>
+                                        <td>{{ transaction.category.name }}</td>
+                                        <td>{{ transaction.description|truncatewords:5 }}</td>
+                                        <td>
+                                            <span class="badge {% if transaction.type == 'expense' %}bg-danger{% else %}bg-success{% endif %}">
+                                                {{ transaction.get_type_display }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end {% if transaction.type == 'expense' %}expense{% else %}income{% endif %}">
+                                            <strong>{{ transaction.amount|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'finance:transaction_edit' transaction.pk %}" class="btn btn-sm btn-warning">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'finance:transaction_delete' transaction.pk %}" class="btn btn-sm btn-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <h4 class="alert-heading">Nu ai tranzacții</h4>
+        <p>Adaugă prima ta tranzacție pentru a începe să-ți urmărești banii.</p>
+        <a href="{% url 'finance:transaction_create' %}" class="btn btn-primary">Adauga Tranzactie</a>
+    </div>
+{% endif %}
+{% endblock %}

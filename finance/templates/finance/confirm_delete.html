@@ -1,0 +1,51 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Confirmare Ștergere - Money Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="alert alert-danger mt-4">
+            <h4 class="alert-heading">Confirmare Ștergere</h4>
+            <p>Ești sigur că vrei să ștergi următorul element?</p>
+            
+            <div class="card mt-3">
+                <div class="card-body">
+                    {% if account %}
+                        <p><strong>Cont:</strong> {{ account.name }}</p>
+                        <p><strong>Tip:</strong> {{ account.get_type_display }}</p>
+                        <p><strong>Sold:</strong> {{ account.balance|floatformat:2 }}</p>
+                    {% elif transaction %}
+                        <p><strong>Tranzacție:</strong> {{ transaction.get_type_display }}</p>
+                        <p><strong>Categorie:</strong> {{ transaction.category.name }}</p>
+                        <p><strong>Suma:</strong> {{ transaction.amount|floatformat:2 }} RON</p>
+                    {% elif budget %}
+                        <p><strong>Buget:</strong> {{ budget.category.name }}</p>
+                        <p><strong>Lună:</strong> {{ budget.month|date:"F Y" }}</p>
+                        <p><strong>Suma:</strong> {{ budget.amount|floatformat:2 }} RON</p>
+                    {% elif savings %}
+                        <p><strong>Obiectiv:</strong> {{ savings.name }}</p>
+                        <p><strong>Țintă:</strong> {{ savings.target_amount|floatformat:2 }} RON</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Șterge
+                </button>
+                {% if account %}
+                    <a href="{% url 'finance:account_list' %}" class="btn btn-secondary">Anulare</a>
+                {% elif transaction %}
+                    <a href="{% url 'finance:transaction_list' %}" class="btn btn-secondary">Anulare</a>
+                {% elif budget %}
+                    <a href="{% url 'finance:budget_list' %}" class="btn btn-secondary">Anulare</a>
+                {% elif savings %}
+                    <a href="{% url 'finance:savings_list' %}" class="btn btn-secondary">Anulare</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

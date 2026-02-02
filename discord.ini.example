@@ -1,0 +1,28 @@
+[discord]
+# Discord OAuth2 Configuration
+# Obții aceste valori de pe https://discord.com/developers/applications
+# 
+# Pași pentru setup:
+# 1. Mergi pe https://discord.com/developers/applications
+# 2. Creează o aplicație nouă
+# 3. Du-te la "OAuth2" -> "General"
+# 4. Copie "Client ID" și "Client Secret" mai jos
+# 5. Adaugă redirect URL: http://127.0.0.1:9512/accounts/discord/login/callback/
+# 6. Copiaza acest fișier ca "discord.ini" și completează valorile
+
+CLIENT_ID = YOUR_CLIENT_ID_HERE
+CLIENT_SECRET = YOUR_CLIENT_SECRET_HERE
+REDIRECT_URL = http://127.0.0.1:9512/accounts/discord/login/callback/
+
+# Scopes (permisiuni) cerute utilizatorului
+# identify = obține ID și username
+# email = obține email
+# guilds = obține serverele Discord
+SCOPES = identify,email,guilds
+
+# Prompt type - "consent" cere permisiunea mereu, "none" nu cere
+PROMPT = consent
+
+# Session settings
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 1
