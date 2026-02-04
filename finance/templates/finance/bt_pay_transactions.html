@@ -1,0 +1,132 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}BT Pay Transactions{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h2">🛍️ BT Pay Transactions</h1>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <select name="days" class="form-select" onchange="this.form.submit()">
+                        <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+                        <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+                        <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+                        <option value="365" {% if days == 365 %}selected{% endif %}>Last year</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select" onchange="this.form.submit()">
+                        <option value="">All categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>
+                            {{ cat|title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="merchant" class="form-control" placeholder="Search merchant..." 
+                           value="{{ merchant }}" onchange="this.form.submit()">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    {% if transactions %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        Found {{ transactions|length }} transactions
+                        {% if category %}in {{ category|title }}{% endif %}
+                        {% if merchant %}matching "{{ merchant }}"{% endif %}
+                    </h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Merchant</th>
+                                <th>Category</th>
+                                <th class="text-end">Amount</th>
+                                <th>Currency</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trans in transactions %}
+                            {% with category=trans|categorize_bt_pay %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">{{ trans.date|date:"Y-m-d H:i" }}</small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'finance:bt_pay_merchant_detail' merchant=trans.description %}">
+                                        <strong>{{ trans.description|truncatewords:4 }}</strong>
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if category %}
+                                    <span class="badge bg-info">{{ category|title }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ trans.amount|floatformat:2 }}</strong>
+                                </td>
+                                <td>{{ trans.currency }}</td>
+                                <td class="text-center">
+                                    <a href="{% url 'finance:bank_transaction_accept' trans.pk %}" 
+                                       class="btn btn-sm btn-success" title="Accept">✓</a>
+                                    <a href="{% url 'finance:bank_transaction_ignore' trans.pk %}" 
+                                       class="btn btn-sm btn-danger" title="Ignore">✗</a>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No transactions found
+        {% if category %}in category "{{ category }}"{% endif %}
+        {% if merchant %}matching "{{ merchant }}"{% endif %}.
+    </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'finance:bt_pay_dashboard' %}" class="btn btn-secondary">
+            ← Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Custom template filter for categorization -->
+<script>
+function categorizeBtPay(description) {
+    // This would be handled by backend template filters
+    // See BTPay.guess_category()
+    return 'other';
+}
+</script>
+{% endblock %}

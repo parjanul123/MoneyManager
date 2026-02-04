@@ -1,0 +1,470 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}BT Pay WebSocket Live{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Connection Status -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-warning d-flex justify-content-between align-items-center" id="status-alert">
+                <div>
+                    <h6 class="mb-0">
+                        <span id="status-icon">🔴</span>
+                        <span id="status-text">Connecting to WebSocket...</span>
+                    </h6>
+                </div>
+                <small id="connection-time" class="text-muted">Initializing...</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h2">
+                💳 BT Pay WebSocket
+                <small class="text-muted">(Real-time Push)</small>
+            </h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-outline-danger" id="disconnect-btn">🔌 Disconnect</button>
+            <button class="btn btn-outline-primary" id="refresh-btn">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <!-- Live Metrics -->
+    <div class="row mb-4" id="metrics-container">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">⏳ Pending</h6>
+                    <h3 class="mb-0" id="metric-pending">-</h3>
+                    <small id="metric-pending-amount">- RON</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">📅 Today</h6>
+                    <h3 class="mb-0" id="metric-today">-</h3>
+                    <small id="metric-today-amount">- RON</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">📊 Month</h6>
+                    <h3 class="mb-0" id="metric-month">-</h3>
+                    <small id="metric-month-amount">- RON</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">📍 Latency</h6>
+                    <h3 class="mb-0" id="metric-latency">-</h3>
+                    <small>WebSocket RTT</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Log -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📨 Received Messages</h5>
+                </div>
+                <div id="message-log" style="height: 400px; overflow-y: auto; background: #f8f9fa;">
+                    <div class="p-3">
+                        <small class="text-muted">Waiting for messages...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WebSocket Info -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">📊 WebSocket Stats</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <td><strong>Connected:</strong></td>
+                                <td id="stat-connected">No</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Messages Received:</strong></td>
+                                <td id="stat-messages">0</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Connection Time:</strong></td>
+                                <td id="stat-time">-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Message:</strong></td>
+                                <td id="stat-last">-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ping/Pong:</strong></td>
+                                <td id="stat-ping">-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>URL:</strong></td>
+                                <td id="stat-url">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">🎮 Manual Commands</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-sm btn-primary w-100 mb-2" id="cmd-ping">Send Ping</button>
+                    <button class="btn btn-sm btn-info w-100 mb-2" id="cmd-refresh-data">Refresh Data</button>
+                    <button class="btn btn-sm btn-warning w-100 mb-2" id="cmd-pending">Get Pending</button>
+                    <button class="btn btn-sm btn-success w-100" id="cmd-auto-cat">Auto-Categorize</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Transactions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">⏳ Pending Transactions (WebSocket Push)</h5>
+                </div>
+                <div id="pending-list" style="max-height: 400px; overflow-y: auto;">
+                    <div class="p-3 text-muted text-center">
+                        Waiting for data...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hourly Chart -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📈 24-Hour Breakdown (WebSocket)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlyChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">🎯 Categories (WebSocket Push)</h5>
+                </div>
+                <div id="category-list" style="max-height: 300px; overflow-y: auto;">
+                    <div class="p-3 text-muted text-center">
+                        Waiting for data...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// WebSocket Configuration
+const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+const wsUrl = `${protocol}//${location.host}/ws/btpay/live/`;
+
+let ws = null;
+let messageCount = 0;
+let connectionStartTime = null;
+let lastPingTime = null;
+let latency = 0;
+let chart = null;
+
+// Initialize WebSocket on page load
+document.addEventListener('DOMContentLoaded', function() {
+    connectWebSocket();
+    setupEventListeners();
+});
+
+// Connect to WebSocket
+function connectWebSocket() {
+    console.log('Connecting to WebSocket:', wsUrl);
+    document.getElementById('stat-url').textContent = wsUrl;
+    
+    ws = new WebSocket(wsUrl);
+    
+    ws.onopen = function(event) {
+        console.log('WebSocket connected');
+        connectionStartTime = new Date();
+        updateStatus('Connected', 'success');
+        document.getElementById('stat-connected').textContent = 'Yes ✅';
+        
+        // Request initial data
+        ws.send(JSON.stringify({ command: 'request_data' }));
+    };
+    
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        messageCount++;
+        
+        console.log('WebSocket message:', data);
+        logMessage(data);
+        
+        // Update stats
+        document.getElementById('stat-messages').textContent = messageCount;
+        document.getElementById('stat-last').textContent = new Date().toLocaleTimeString();
+        
+        // Handle different message types
+        if (data.type === 'dashboard_update') {
+            updateDashboard(data.data);
+        } else if (data.type === 'pending_update') {
+            updatePendingList(data.data);
+        } else if (data.type === 'hourly_update') {
+            updateHourlyChart(data.data);
+        } else if (data.type === 'category_update') {
+            updateCategoryList(data.data);
+        } else if (data.type === 'auto_categorize_result') {
+            showNotification(`✅ Auto-categorized ${data.categorized} transactions`, 'success');
+        } else if (data.type === 'pong') {
+            const now = new Date().getTime();
+            latency = now - lastPingTime;
+            document.getElementById('metric-latency').textContent = latency + ' ms';
+            document.getElementById('stat-ping').textContent = latency + ' ms';
+        }
+    };
+    
+    ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+        updateStatus('Connection Error', 'danger');
+        document.getElementById('stat-connected').textContent = 'No ❌';
+    };
+    
+    ws.onclose = function(event) {
+        console.log('WebSocket closed');
+        updateStatus('Disconnected', 'warning');
+        document.getElementById('stat-connected').textContent = 'No ❌';
+        
+        // Try to reconnect after 5 seconds
+        setTimeout(connectWebSocket, 5000);
+    };
+}
+
+// Update status indicator
+function updateStatus(text, status) {
+    const statusMap = {
+        'success': { icon: '🟢', color: 'alert-success' },
+        'danger': { icon: '🔴', color: 'alert-danger' },
+        'warning': { icon: '🟡', color: 'alert-warning' },
+    };
+    
+    const map = statusMap[status];
+    document.getElementById('status-icon').textContent = map.icon;
+    document.getElementById('status-text').textContent = text;
+    document.getElementById('status-alert').className = `alert ${map.color} d-flex justify-content-between align-items-center`;
+}
+
+// Log message to console
+function logMessage(data) {
+    const log = document.getElementById('message-log');
+    const entry = document.createElement('div');
+    entry.className = 'p-2 border-bottom';
+    
+    const time = new Date().toLocaleTimeString();
+    const type = data.type || 'unknown';
+    
+    entry.innerHTML = `
+        <small class="text-muted">${time}</small><br>
+        <strong>${type}</strong>: 
+        <code>${JSON.stringify(data).substring(0, 100)}...</code>
+    `;
+    
+    log.insertBefore(entry, log.firstChild);
+    
+    // Keep only last 50 messages
+    while (log.children.length > 50) {
+        log.removeChild(log.lastChild);
+    }
+}
+
+// Update dashboard metrics
+function updateDashboard(data) {
+    updateMetric('metric-pending', data.pending_count);
+    updateMetric('metric-pending-amount', data.pending_amount.toFixed(2) + ' RON');
+    updateMetric('metric-today', data.today_transactions);
+    updateMetric('metric-today-amount', data.today_amount.toFixed(2) + ' RON');
+    updateMetric('metric-month', data.month_transactions);
+    updateMetric('metric-month-amount', data.month_amount.toFixed(2) + ' RON');
+}
+
+// Update metric with animation
+function updateMetric(id, value) {
+    const elem = document.getElementById(id);
+    if (elem && elem.textContent !== String(value)) {
+        elem.textContent = value;
+        elem.style.animation = 'none';
+        setTimeout(() => { elem.style.animation = 'pulse 0.5s'; }, 10);
+    }
+}
+
+// Update pending list
+function updatePendingList(transactions) {
+    const list = document.getElementById('pending-list');
+    
+    if (transactions.length === 0) {
+        list.innerHTML = '<div class="p-3 text-success text-center">✅ No pending transactions</div>';
+        return;
+    }
+    
+    let html = '';
+    transactions.forEach(trans => {
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <strong>${trans.merchant}</strong>
+                    <span class="badge bg-danger">${trans.amount.toFixed(2)} ${trans.currency}</span>
+                </div>
+                <small class="text-muted">${trans.description}</small>
+                ${trans.category_guess ? `<br><span class="badge bg-info">${trans.category_guess}</span>` : ''}
+            </div>
+        `;
+    });
+    
+    list.innerHTML = html;
+}
+
+// Update hourly chart
+function updateHourlyChart(hours) {
+    const ctx = document.getElementById('hourlyChart').getContext('2d');
+    
+    if (chart) {
+        chart.destroy();
+    }
+    
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: hours.map(h => h.hour + ':00'),
+            datasets: [{
+                label: 'Transactions',
+                data: hours.map(h => h.count),
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 3,
+                pointBackgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+// Update category list
+function updateCategoryList(categories) {
+    const list = document.getElementById('category-list');
+    
+    let html = '';
+    Object.entries(categories).forEach(([cat, data]) => {
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong>${cat.charAt(0).toUpperCase() + cat.slice(1)}</strong>
+                    <small>
+                        <span class="badge bg-success">Today: ${data.today.count} x ${data.today.amount.toFixed(2)}</span>
+                        <span class="badge bg-info">Week: ${data.week.count} x ${data.week.amount.toFixed(2)}</span>
+                    </small>
+                </div>
+            </div>
+        `;
+    });
+    
+    list.innerHTML = html || '<div class="p-3 text-muted text-center">No data</div>';
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    document.getElementById('disconnect-btn').addEventListener('click', () => {
+        if (ws) ws.close();
+    });
+    
+    document.getElementById('refresh-btn').addEventListener('click', () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ command: 'request_data' }));
+        }
+    });
+    
+    document.getElementById('cmd-ping').addEventListener('click', () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            lastPingTime = new Date().getTime();
+            ws.send(JSON.stringify({ command: 'ping' }));
+        }
+    });
+    
+    document.getElementById('cmd-refresh-data').addEventListener('click', () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ command: 'request_data' }));
+        }
+    });
+    
+    document.getElementById('cmd-pending').addEventListener('click', () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ command: 'request_pending' }));
+        }
+    });
+    
+    document.getElementById('cmd-auto-cat').addEventListener('click', () => {
+        if (confirm('Auto-categorize all pending transactions?')) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ command: 'auto_categorize' }));
+            }
+        }
+    });
+}
+
+// Show notification
+function showNotification(message, type) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+    alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.row'));
+    setTimeout(() => alert.remove(), 5000);
+}
+
+// CSS animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    .list-group-item {
+        border-left: 3px solid #0d6efd;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

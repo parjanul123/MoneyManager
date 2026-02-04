@@ -1,0 +1,88 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}Sincronizare Tranzacții{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4"><i class="fas fa-sync"></i> Sincronizare Tranzacții Bancare</h2>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Conturi selectate:</strong></label>
+                            <div class="list-group">
+                                {% for conn in connections %}
+                                <div class="list-group-item">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    {{ conn.get_bank_display() }} - {{ conn.account_name }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label for="{{ form.days_back.id_for_label }}" class="form-label">
+                                {{ form.days_back.label }}
+                            </label>
+                            {{ form.days_back }}
+                            <small class="form-text text-muted">
+                                Sincronizează tranzacțiile mai recente de N zile
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.auto_create_transactions }}
+                                <label class="form-check-label" for="{{ form.auto_create_transactions.id_for_label }}">
+                                    {{ form.auto_create_transactions.label }}
+                                </label>
+                                <small class="d-block text-muted mt-1">
+                                    Dacă bifat, tranzacțiile vor fi adăugate automat în contul tău după sincronizare
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sync"></i> Sincronizează Acum
+                            </button>
+                            <a href="{% url 'finance:bank_connections_list' %}" class="btn btn-secondary">
+                                Anulare
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Ce se întâmplă?</h6>
+                    <ol class="mb-0">
+                        <li>Se conectează la API-urile băncilor</li>
+                        <li>Se descarcă tranzacțiile din perioada selectată</li>
+                        <li>Se detectează și se evită duplicatele</li>
+                        <li>Se pot crea automat înregistrări în contul tău</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

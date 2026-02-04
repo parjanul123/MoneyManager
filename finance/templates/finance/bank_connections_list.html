@@ -1,0 +1,99 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}Conturile Mele Bancare{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>🏦 Conturile Mele Bancare</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'finance:bank_connection_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Conectare Nouă
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if connections %}
+        <div class="row">
+            {% for connection in connections %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-2">
+                                    {% if connection.bank == 'revolut' %}
+                                        <i class="fas fa-wallet"></i>
+                                    {% else %}
+                                        <i class="fas fa-university"></i>
+                                    {% endif %}
+                                    {{ connection.get_bank_display() }}
+                                </h5>
+                                <p class="card-text text-muted">
+                                    {{ connection.account_name }}
+                                    {% if connection.account_number %}
+                                    <br><small>{{ connection.account_number }}</small>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div>
+                                {% if connection.is_active %}
+                                <span class="badge bg-success">Conectat</span>
+                                {% else %}
+                                <span class="badge bg-danger">Deconectat</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-3 mb-3">
+                            {% if connection.api_last_sync %}
+                            <small class="text-muted">
+                                Ultima sincronizare: <strong>{{ connection.api_last_sync|date:"d M Y, H:i" }}</strong>
+                            </small>
+                            {% else %}
+                            <small class="text-muted">Nicio sincronizare încă</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="btn-group" role="group" style="width: 100%;">
+                            <a href="{% url 'finance:bank_transaction_pending' pk=connection.pk %}" 
+                               class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-sync"></i> Pending
+                            </a>
+                            <a href="{% url 'finance:bank_sync_transactions_one' pk=connection.pk %}" 
+                               class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-refresh"></i> Sincronizează
+                            </a>
+                            <form method="POST" action="{% url 'finance:bank_connection_delete' pk=connection.pk %}" 
+                                  style="display: inline;" onsubmit="return confirm('Ești sigur?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Șterge
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle"></i> 
+            Nicio bancă conectată. <a href="{% url 'finance:bank_connection_create' %}">Conectează o bancă</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

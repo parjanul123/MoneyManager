@@ -1,0 +1,165 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}Tranzacții în Așteptare{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>⏳ Tranzacții în Așteptare</h2>
+            <p class="text-muted">Revizuiește și acceptă tranzacțiile sincronizate din bănci</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'finance:bank_sync_transactions' %}" class="btn btn-primary">
+                <i class="fas fa-refresh"></i> Sincronizează din nou
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if stats %}
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">TOTAL VENITURI</h6>
+                    <h3 class="text-success">{{ stats.total_income|default:"0.00" }} RON</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">TOTAL CHELTUIELI</h6>
+                    <h3 class="text-danger">{{ stats.total_expense|default:"0.00" }} RON</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if transactions %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Data</th>
+                        <th>Descriere</th>
+                        <th>Destinație</th>
+                        <th class="text-end">Sumă</th>
+                        <th>Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trans in transactions %}
+                    <tr>
+                        <td>
+                            <small>{{ trans.date|date:"d M Y, H:i" }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ trans.description|truncatewords:10 }}</strong>
+                            {% if trans.recipient_name %}
+                            <br><small class="text-muted">{{ trans.recipient_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if trans.bank_connection.bank == 'revolut' %}
+                            <span class="badge bg-primary"><i class="fas fa-wallet"></i> Revolut</span>
+                            {% else %}
+                            <span class="badge bg-info"><i class="fas fa-university"></i> BT</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if trans.amount > 0 %}
+                            <span class="text-success">+{{ trans.amount }}</span>
+                            {% else %}
+                            <span class="text-danger">{{ trans.amount }}</span>
+                            {% endif %}
+                            {{ trans.currency }}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-success" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#acceptModal{{ trans.id }}">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <form method="POST" action="{% url 'finance:bank_transaction_ignore' trans_pk=trans.id %}"
+                                      style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                            onclick="return confirm('Ignori aceasta tranzacție?')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Modal pentru acceptare -->
+                            <div class="modal fade" id="acceptModal{{ trans.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Acceptă Tranzacție</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{% url 'finance:bank_transaction_accept' trans_pk=trans.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Descriere</label>
+                                                    <textarea name="description" class="form-control" rows="2">{{ trans.description }}</textarea>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Categorie</label>
+                                                    <select name="category_id" class="form-control">
+                                                        <option value="">--- Selectează categorie ---</option>
+                                                        {% for cat in categories %}
+                                                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="alert alert-info">
+                                                    <strong>{{ trans.amount }} {{ trans.currency }}</strong><br>
+                                                    <small>{{ trans.description }}</small>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulare</button>
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-check"></i> Acceptă
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i> 
+            Nu sunt tranzacții în așteptare. 
+            <a href="{% url 'finance:bank_sync_transactions' %}">Sincronizează din nou</a>
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'finance:bank_connections_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Înapoi la bănci
+        </a>
+    </div>
+</div>
+{% endblock %}

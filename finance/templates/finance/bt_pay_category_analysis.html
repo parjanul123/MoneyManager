@@ -1,0 +1,164 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}BT Pay Category Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h2">📊 Category Analysis</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <form method="get" class="d-inline">
+                <select name="days" class="form-select d-inline-block w-auto" onchange="this.form.submit()">
+                    <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+                    <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+                    <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+                    <option value="365" {% if days == 365 %}selected{% endif %}>Last year</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="categoryChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📈 Spending by Category</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th class="text-center">Transactions</th>
+                                <th class="text-end">Total Spent</th>
+                                <th class="text-end">Average</th>
+                                <th class="text-end">Max</th>
+                                <th class="text-end">Min</th>
+                                <th class="text-center">% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category, data in categories.items %}
+                            {% with total=categories|dict_sum:'total' %}
+                            <tr>
+                                <td>
+                                    <strong>{{ category|title }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ data.merchants|length }} unique merchants
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    <badge class="badge bg-primary">{{ data.count }}</badge>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ data.total|floatformat:2 }} RON</strong>
+                                </td>
+                                <td class="text-end">
+                                    {{ data.average|floatformat:2 }}
+                                </td>
+                                <td class="text-end">
+                                    <small>{{ data.max|floatformat:2 }}</small>
+                                </td>
+                                <td class="text-end">
+                                    <small>{{ data.min|floatformat:2 }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <small>
+                                        {% widthratio data.total total 100 %}%
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Merchants per Category -->
+    <div class="row mt-4">
+        {% for category, data in categories.items %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">🏪 Top in {{ category|title }}</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for merchant, count in data.merchants.items|slice:":5" %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ merchant|truncatewords:3 }}</span>
+                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'finance:bt_pay_dashboard' %}" class="btn btn-secondary">
+            ← Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categories = {{ categories|safe|json_script:"categories_data" }};
+    
+    // Extract data for chart
+    const labels = Object.keys(categories);
+    const data = labels.map(cat => parseFloat(categories[cat].total));
+    const colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+    ];
+    
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+            datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

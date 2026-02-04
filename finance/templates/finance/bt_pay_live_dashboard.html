@@ -1,0 +1,540 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}BT Pay Live Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- 🎯 CLEAR SETUP INSTRUCTIONS -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-primary border-2 border-primary" role="alert">
+                <h5 class="alert-heading mb-3">
+                    🚀 Bine ai venit la BT Pay Live Dashboard!
+                </h5>
+                <p class="mb-2"><strong>Pentru a vedea tranzacțiile tale în timp real:</strong></p>
+                <ol class="mb-0">
+                    <li><strong>Conectează-ți conturile bancare</strong> - Apasă pe butonul verde <strong>"💳 Conectare Cont"</strong> (colțul din dreapta sus sau navbar)</li>
+                    <li><strong>Alege banca</strong> - Revolut sau Banca Transilvania</li>
+                    <li><strong>Autorizează accesul</strong> - Finalizează procesul de login/autorizare</li>
+                    <li><strong>Sincronizează tranzacții</strong> - Apasă pe "Sincronizează"</li>
+                    <li><strong>Vezi datele în timp real</strong> - Dashboard se actualizează la fiecare 5 secunde</li>
+                </ol>
+                <hr>
+                <p class="mb-0"><small><strong>Sfat:</strong> Dacă nu vezi niciun dat mai jos, este pentru că nu ai încă conturi conectate. Apasă pe "💳 Conectare Cont" acum!</small></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">
+                        🔴 <span id="connection-status">Connecting...</span>
+                    </h6>
+                </div>
+                <small id="last-update" class="text-muted">Initializing...</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h2">
+                💳 BT Pay Live Dashboard
+                <span id="refresh-indicator" style="display:none;">🔄</span>
+            </h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'finance:bank_connection_create' %}" class="btn btn-success" title="Conectează contul tău bancar">
+                💳 Conectează Cont
+            </a>
+            <button class="btn btn-outline-secondary" id="pause-btn">⏸️ Pause</button>
+            <button class="btn btn-outline-primary" id="refresh-btn">🔄 Refresh Now</button>
+        </div>
+    </div>
+
+    <!-- Key Metrics (Live Updating) -->
+    <div class="row mb-4" id="metrics-container">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">⏳ Pending</h6>
+                    <h3 class="mb-0" id="metric-pending">0</h3>
+                    <small id="metric-pending-amount">0.00 RON</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">📅 Today</h6>
+                    <h3 class="mb-0" id="metric-today-count">0</h3>
+                    <small id="metric-today-amount">0.00 RON</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">📊 This Month</h6>
+                    <h3 class="mb-0" id="metric-month-count">0</h3>
+                    <small id="metric-month-amount">0.00 RON</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">🏪 Top Merchant</h6>
+                    <small id="metric-top-merchant">-</small>
+                    <h5 id="metric-top-amount">-</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Transactions (Live) -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white d-flex justify-content-between">
+                    <h5 class="mb-0">⏳ Pending (<span id="pending-badge">0</span>)</h5>
+                    <small id="pending-last-update"></small>
+                </div>
+                <div id="pending-list" class="list-group list-group-flush">
+                    <div class="list-group-item text-muted text-center">
+                        Loading pending transactions...
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <button class="btn btn-sm btn-success" id="auto-cat-btn">✨ Auto-Categorize All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Synced -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between">
+                    <h5 class="mb-0">✅ Recent Synced</h5>
+                    <small id="recent-last-update"></small>
+                </div>
+                <div id="recent-list" class="list-group list-group-flush">
+                    <div class="list-group-item text-muted text-center">
+                        Loading recent transactions...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Merchants (Real-time) -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">🏪 Top Merchants (Last 30 Days)</h5>
+                </div>
+                <div id="merchants-container" class="table-responsive">
+                    <table class="table mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Merchant</th>
+                                <th class="text-center">Transactions</th>
+                                <th class="text-end">Total Spent</th>
+                                <th class="text-center">Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody id="merchants-body">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hourly Breakdown -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📈 Last 24 Hours</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlyChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Real-time -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">🎯 Categories Breakdown</h5>
+                </div>
+                <div id="categories-container" class="table-responsive">
+                    <table class="table mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th class="text-center">Today</th>
+                                <th class="text-center">This Week</th>
+                                <th class="text-end">% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categories-body">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Real-time Updates -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let isLiveMode = true;
+let updateInterval = null;
+let chart = null;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    initializeRealtime();
+    setupEventListeners();
+    updateAllData();
+    
+    // Auto-update every 5 seconds
+    updateInterval = setInterval(updateAllData, 5000);
+});
+
+// Setup event listeners
+function setupEventListeners() {
+    document.getElementById('pause-btn').addEventListener('click', function() {
+        isLiveMode = !isLiveMode;
+        if (isLiveMode) {
+            this.textContent = '⏸️ Pause';
+            updateInterval = setInterval(updateAllData, 5000);
+        } else {
+            this.textContent = '▶️ Resume';
+            clearInterval(updateInterval);
+        }
+    });
+    
+    document.getElementById('refresh-btn').addEventListener('click', updateAllData);
+    
+    document.getElementById('auto-cat-btn').addEventListener('click', function() {
+        if (confirm('Auto-categorize all pending BT Pay transactions?')) {
+            fetch('{% url "finance:bt_pay_auto_categorize" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                showNotification(`✅ ${data.message}`, 'success');
+                setTimeout(updateAllData, 1000);
+            });
+        }
+    });
+}
+
+// Initialize connection status
+function initializeRealtime() {
+    updateConnectionStatus('Connected', 'success');
+}
+
+// Update connection status
+function updateConnectionStatus(text, status) {
+    const elem = document.getElementById('connection-status');
+    const color = status === 'success' ? '🟢' : '🔴';
+    elem.textContent = color + ' ' + text;
+    elem.parentElement.className = 'alert alert-' + (status === 'success' ? 'success' : 'danger') + ' d-flex justify-content-between align-items-center';
+}
+
+// Format timestamp
+function formatTime(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString();
+}
+
+// Update all data
+async function updateAllData() {
+    if (!isLiveMode) return;
+    
+    showRefreshIndicator(true);
+    
+    try {
+        // Fetch all data in parallel
+        const [dashboardData, hourlyData, categoriesData] = await Promise.all([
+            fetch('/finance/api/bt-pay/dashboard/').then(r => r.json()),
+            fetch('/finance/api/bt-pay/hourly/').then(r => r.json()),
+            fetch('/finance/api/bt-pay/categories/').then(r => r.json())
+        ]);
+        
+        // Update metrics
+        updateMetrics(dashboardData.dashboard);
+        
+        // Update pending
+        updatePendingList(dashboardData.dashboard);
+        
+        // Update recent
+        updateRecentList(dashboardData.dashboard);
+        
+        // Update merchants
+        updateMerchants(dashboardData.dashboard);
+        
+        // Update hourly chart
+        updateHourlyChart(hourlyData.hours);
+        
+        // Update categories
+        updateCategories(categoriesData.categories);
+        
+        // Update connection status
+        updateConnectionStatus('Connected', 'success');
+        document.getElementById('last-update').textContent = 'Last update: ' + formatTime(dashboardData.timestamp);
+        
+    } catch (error) {
+        console.error('Error updating data:', error);
+        updateConnectionStatus('Connection Error', 'danger');
+    } finally {
+        showRefreshIndicator(false);
+    }
+}
+
+// Update metrics cards
+function updateMetrics(dashboard) {
+    updateElement('metric-pending', dashboard.pending_count);
+    updateElement('metric-pending-amount', dashboard.pending_amount.toFixed(2) + ' RON');
+    updateElement('metric-today-count', dashboard.today_transactions);
+    updateElement('metric-today-amount', dashboard.today_amount.toFixed(2) + ' RON');
+    updateElement('metric-month-count', dashboard.month_transactions);
+    updateElement('metric-month-amount', dashboard.month_amount.toFixed(2) + ' RON');
+    
+    if (dashboard.top_merchants.length > 0) {
+        const top = dashboard.top_merchants[0];
+        updateElement('metric-top-merchant', top.name.substring(0, 15) + '...');
+        updateElement('metric-top-amount', top.amount.toFixed(2) + ' RON');
+    }
+    
+    // Update badge
+    document.getElementById('pending-badge').textContent = dashboard.pending_count;
+}
+
+// Update pending list
+function updatePendingList(dashboard) {
+    const list = document.getElementById('pending-list');
+    
+    if (dashboard.pending_count === 0) {
+        list.innerHTML = '<div class="list-group-item text-success text-center">✅ No pending transactions</div>';
+        return;
+    }
+    
+    // Fetch pending data
+    fetch('/finance/api/bt-pay/pending/').then(r => r.json()).then(data => {
+        let html = '';
+        
+        data.pending_transactions.forEach(trans => {
+            html += `
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <strong>${trans.merchant}</strong>
+                        <span class="badge bg-danger">${trans.amount.toFixed(2)} ${trans.currency}</span>
+                    </div>
+                    <small class="text-muted">${trans.description}</small>
+                    ${trans.category_guess ? `<br><span class="badge bg-info">${trans.category_guess}</span>` : ''}
+                </div>
+            `;
+        });
+        
+        list.innerHTML = html;
+        document.getElementById('pending-last-update').textContent = formatTime(data.timestamp);
+    });
+}
+
+// Update recent list
+function updateRecentList(dashboard) {
+    const list = document.getElementById('recent-list');
+    
+    if (dashboard.recent_transactions.length === 0) {
+        list.innerHTML = '<div class="list-group-item text-muted text-center">No recent transactions</div>';
+        return;
+    }
+    
+    let html = '';
+    dashboard.recent_transactions.forEach(trans => {
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <strong>${trans.merchant}</strong>
+                    <span class="badge bg-success">${trans.amount.toFixed(2)} RON</span>
+                </div>
+                <small class="text-muted">${new Date(trans.date).toLocaleString()}</small>
+                ${trans.category ? `<br><span class="badge bg-info">${trans.category}</span>` : ''}
+            </div>
+        `;
+    });
+    
+    list.innerHTML = html;
+    document.getElementById('recent-last-update').textContent = formatTime(new Date().toISOString());
+}
+
+// Update merchants table
+function updateMerchants(dashboard) {
+    const tbody = document.getElementById('merchants-body');
+    const maxAmount = Math.max(...dashboard.top_merchants.map(m => m.amount), 1);
+    
+    let html = '';
+    dashboard.top_merchants.forEach(merchant => {
+        const percentage = (merchant.amount / maxAmount * 100).toFixed(0);
+        html += `
+            <tr>
+                <td><strong>${merchant.name}</strong></td>
+                <td class="text-center">${merchant.count}</td>
+                <td class="text-end">${merchant.amount.toFixed(2)} RON</td>
+                <td class="text-center">
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar" style="width: ${percentage}%"></div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html || '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
+}
+
+// Update hourly chart
+function updateHourlyChart(hours) {
+    const ctx = document.getElementById('hourlyChart').getContext('2d');
+    
+    if (chart) {
+        chart.destroy();
+    }
+    
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: hours.map(h => h.hour + ':00'),
+            datasets: [{
+                label: 'Transactions',
+                data: hours.map(h => h.count),
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Amount (RON)',
+                data: hours.map(h => h.amount),
+                backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index' },
+            scales: {
+                y: { beginAtZero: true },
+                y1: { type: 'linear', position: 'right', beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Update categories
+function updateCategories(categories) {
+    const tbody = document.getElementById('categories-body');
+    
+    let html = '';
+    let totalWeek = Object.values(categories).reduce((sum, cat) => sum + cat.week.amount, 0);
+    
+    Object.entries(categories).forEach(([category, data]) => {
+        const percentage = totalWeek > 0 ? (data.week.amount / totalWeek * 100).toFixed(0) : 0;
+        html += `
+            <tr>
+                <td><strong>${category.charAt(0).toUpperCase() + category.slice(1)}</strong></td>
+                <td class="text-center">
+                    <small>${data.today.count} x ${data.today.amount.toFixed(2)}</small>
+                </td>
+                <td class="text-center">
+                    <small>${data.week.count} x ${data.week.amount.toFixed(2)}</small>
+                </td>
+                <td class="text-end">${percentage}%</td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html || '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
+}
+
+// Utilities
+function updateElement(id, value) {
+    const elem = document.getElementById(id);
+    if (elem && elem.textContent !== String(value)) {
+        elem.textContent = value;
+        elem.style.animation = 'none';
+        setTimeout(() => { elem.style.animation = 'pulse 0.5s'; }, 10);
+    }
+}
+
+function showRefreshIndicator(show) {
+    document.getElementById('refresh-indicator').style.display = show ? 'inline' : 'none';
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.row'));
+    setTimeout(() => alert.remove(), 5000);
+}
+
+// CSS animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+<style>
+.card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s;
+}
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+</style>
+{% endblock %}

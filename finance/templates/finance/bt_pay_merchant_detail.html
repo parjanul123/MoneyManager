@@ -1,0 +1,115 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}{{ stats.merchant }} - BT Pay{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">
+                🏪 {{ stats.merchant }}
+                <small class="text-muted">BT Pay</small>
+            </h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'finance:bt_pay_dashboard' %}" class="btn btn-outline-secondary">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Transactions</h6>
+                    <h3 class="mb-0">{{ stats.total_transactions }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Spent</h6>
+                    <h3 class="mb-0">{{ stats.total_spent|floatformat:2 }}</h3>
+                    <small>{{ stats.currency }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Average Transaction</h6>
+                    <h3 class="mb-0">{{ stats.average_transaction|floatformat:2 }}</h3>
+                    <small>{{ stats.currency }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">Activity Period</h6>
+                    <small>
+                        {{ stats.first_transaction|date:"M d, Y" }}<br>
+                        to<br>
+                        {{ stats.last_transaction|date:"M d, Y" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📋 Recent Transactions (Last 50)</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th class="text-end">Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trans in stats.transactions %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">{{ trans.date|date:"Y-m-d H:i" }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ trans.description }}</small>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ trans.amount|floatformat:2 }} {{ trans.currency }}</strong>
+                                </td>
+                                <td>
+                                    {% if trans.sync_status == 'synced' %}
+                                    <span class="badge bg-success">Synced</span>
+                                    {% elif trans.sync_status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif trans.sync_status == 'ignored' %}
+                                    <span class="badge bg-secondary">Ignored</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No transactions</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -51,6 +51,8 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '127.0.0.1:9512']
 # Application definition
 
 INSTALLED_APPS = [
+    # 'daphne',  # Django Channels ASGI server - OPTIONAL (install with: pip install daphne)
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -105,6 +107,21 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 WSGI_APPLICATION = 'moneymanager.wsgi.application'
+
+# OPTIONAL: Django Channels ASGI (install with: pip install channels daphne)
+try:
+    from importlib import import_module
+    import_module('daphne')
+    ASGI_APPLICATION = 'moneymanager.asgi.application'
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer'
+        }
+    }
+except ImportError:
+    # Daphne not installed, skip WebSocket support
+    ASGI_APPLICATION = None
+    CHANNEL_LAYERS = None
 
 
 # Database

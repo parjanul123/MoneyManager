@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.contrib.postgres.fields import ArrayField
+import json
 
 class UserProfile(models.Model):
     """Model pentru profil utilizator cu date de Discord"""
@@ -127,3 +129,80 @@ class Savings(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+
+class BankConnection(models.Model):
+    """Model pentru conectările la API-urile bancilor"""
+    BANK_CHOICES = [
+        ('bt', 'Banca Transilvania'),
+        ('revolut', 'Revolut'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bank_connections')
+    bank = models.CharField(max_length=20, choices=BANK_CHOICES)
+    account_name = models.CharField(max_length=100)
+    account_number = models.CharField(max_length=50, blank=True)
+    
+    # Credențiale (criptate în producție)
+    access_token = models.TextField(blank=True)
+    refresh_token = models.TextField(blank=True)
+    
+    # Metadate API
+    api_user_id = models.CharField(max_length=255, blank=True)
+    api_last_sync = models.DateTimeField(null=True, blank=True)
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.get_bank_display()} ({self.account_name})"
+    
+    class Meta:
+        unique_together = ['user', 'bank', 'api_user_id']
+        verbose_name_plural = "Bank Connections"
+
+
+class BankTransaction(models.Model):
+    """Model pentru tranzacții sincronizate din bănci"""
+    SYNC_STATUS_CHOICES = [
+        ('pending', 'În așteptare'),
+        ('synced', 'Sincronizat'),
+        ('duplicated', 'Duplicat'),
+        ('ignored', 'Ignorat'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bank_transactions')
+    bank_connection = models.ForeignKey(BankConnection, on_delete=models.CASCADE, related_name='transactions')
+    
+    # ID unic din API
+    external_id = models.CharField(max_length=255, unique=True)
+    
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3, default='RON')
+    description = models.TextField()
+    date = models.DateTimeField()
+    
+    # Detalii suplimentare
+    recipient_name = models.CharField(max_length=255, blank=True)
+    recipient_account = models.CharField(max_length=100, blank=True)
+    
+    # Status sincronizare
+    sync_status = models.CharField(max_length=20, choices=SYNC_STATUS_CHOICES, default='pending')
+    synced_to_transaction = models.ForeignKey(
+        Transaction, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='bank_source'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.get_sync_status_display()} - {self.amount} {self.currency} ({self.date.date()})"
+    
+    class Meta:
+        ordering = ['-date']
+        verbose_name_plural = "Bank Transactions"

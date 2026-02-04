@@ -1,36 +1,29 @@
 {% extends 'finance/base.html' %}
 
-{% block title %}{{ account.name }} - Money Manager{% endblock %}
+{% block title %}Tranzacții - {{ account.name }} - Money Manager{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-        <h1 class="mb-4">{{ account.name }}</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Tranzacții - {{ account.name }}</h1>
+            <a href="{% url 'finance:account_detail' account.pk %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Înapoi la cont
+            </a>
+        </div>
     </div>
 </div>
 
 <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Detalii Cont</h5>
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informații Cont</h5>
             </div>
             <div class="card-body">
                 <p><strong>Tip:</strong> {{ account.get_type_display }}</p>
                 <p><strong>Monedă:</strong> {{ account.currency }}</p>
-                <p><strong>Sold:</strong> <span class="h4">{{ account.balance|floatformat:2 }}</span></p>
-                <p><small class="text-muted">Creat: {{ account.created_at|date:"d.m.Y H:i" }}</small></p>
-                <div class="d-flex gap-2 mt-3">
-                    <a href="{% url 'finance:account_edit' account.pk %}" class="btn btn-warning">
-                        <i class="bi bi-pencil"></i> Editare
-                    </a>
-                    <a href="{% url 'finance:account_delete' account.pk %}" class="btn btn-danger">
-                        <i class="bi bi-trash"></i> Ștergere
-                    </a>
-                    <a href="{% url 'finance:account_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Înapoi
-                    </a>
-                </div>
+                <p><strong>Sold actual:</strong> <span class="h4">{{ account.balance|floatformat:2 }}</span></p>
             </div>
         </div>
     </div>
@@ -40,11 +33,8 @@
 <div class="row">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Tranzacții Recente</h5>
-                <a href="{% url 'finance:account_transactions' account.pk %}" class="btn btn-sm btn-light">
-                    <i class="bi bi-list"></i> Vezi toate
-                </a>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Toate Tranzacțiile ({{ transactions.count }})</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -62,7 +52,7 @@
                         <tbody>
                             {% for transaction in transactions %}
                                 <tr>
-                                    <td>{{ transaction.date|date:"d.m.Y" }}</td>
+                                    <td>{{ transaction.date|date:"d.m.Y H:i" }}</td>
                                     <td>{{ transaction.category.name }}</td>
                                     <td>{{ transaction.description }}</td>
                                     <td>
@@ -90,5 +80,14 @@
         </div>
     </div>
 </div>
+{% else %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Nu sunt tranzacții pentru acest cont.
+        </div>
+    </div>
+</div>
 {% endif %}
+
 {% endblock %}

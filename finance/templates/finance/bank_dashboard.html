@@ -1,0 +1,145 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Bancar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">🏦 Dashboard Bancar</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Statistici Rapide -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="card-title text-success">VENITURI (30 zile)</h6>
+                    <h2 class="text-success">{{ stats.total_income|default:"0.00" }} RON</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h6 class="card-title text-danger">CHELTUIELI (30 zile)</h6>
+                    <h2 class="text-danger">{{ stats.total_expense|default:"0.00" }} RON</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="card-title text-warning">ÎN AȘTEPTARE</h6>
+                    <h2 class="text-warning">{{ pending_count }}</h2>
+                    <a href="{% url 'finance:bank_transactions_pending' %}" class="btn btn-sm btn-warning mt-2">
+                        Revizuiește
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6 class="card-title text-info">CONTURI CONECTATE</h6>
+                    <h2 class="text-info">{{ connections.count }}</h2>
+                    <a href="{% url 'finance:bank_connections_list' %}" class="btn btn-sm btn-info mt-2">
+                        Gestionează
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conturi Conectate -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Conturi Conectate</h5>
+        </div>
+        <div class="card-body">
+            {% if connections %}
+            <div class="row">
+                {% for conn in connections %}
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                        <div>
+                            <strong>{{ conn.account_name }}</strong><br>
+                            <small class="text-muted">{{ conn.get_bank_display() }}</small>
+                        </div>
+                        <div>
+                            {% if conn.api_last_sync %}
+                            <small class="text-muted text-end d-block">
+                                Sincronizat: {{ conn.api_last_sync|date:"H:i" }}
+                            </small>
+                            {% endif %}
+                            <span class="badge bg-success">Activ</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">
+                Nicio bancă conectată. <a href="{% url 'finance:bank_connection_create' %}">Conectează una</a>
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tranzacții Sincronizate Recent -->
+    {% if synced_transactions %}
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Tranzacții Sincronizate Recent</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descriere</th>
+                            <th class="text-end">Sumă</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in synced_transactions %}
+                        <tr>
+                            <td><small>{{ trans.date|date:"d M, H:i" }}</small></td>
+                            <td>{{ trans.description|truncatewords:8 }}</td>
+                            <td class="text-end">
+                                {% if trans.amount > 0 %}
+                                <span class="text-success">+{{ trans.amount }}</span>
+                                {% else %}
+                                <span class="text-danger">{{ trans.amount }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="text-center mb-4">
+        <a href="{% url 'finance:bank_sync_transactions' %}" class="btn btn-primary">
+            <i class="fas fa-refresh"></i> Sincronizare Manuală
+        </a>
+        <a href="{% url 'finance:bank_connections_list' %}" class="btn btn-secondary">
+            <i class="fas fa-cog"></i> Gestionare Conturi
+        </a>
+    </div>
+</div>
+{% endblock %}

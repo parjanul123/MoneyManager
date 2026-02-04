@@ -1,0 +1,100 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}Conectare la Bancă{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4">🔐 Conectare la Bancă</h2>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.bank.id_for_label }}" class="form-label">
+                                {{ form.bank.label }}
+                            </label>
+                            {{ form.bank }}
+                            {% if form.bank.errors %}
+                                <div class="invalid-feedback d-block">{{ form.bank.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-1">
+                                {{ form.bank.help_text|safe }}
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.account_name.id_for_label }}" class="form-label">
+                                {{ form.account_name.label }}
+                            </label>
+                            {{ form.account_name }}
+                            {% if form.account_name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.account_name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.account_number.id_for_label }}" class="form-label">
+                                {{ form.account_number.label }}
+                            </label>
+                            {{ form.account_number }}
+                            {% if form.account_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.account_number.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.access_token.id_for_label }}" class="form-label">
+                                {{ form.access_token.label }}
+                            </label>
+                            {{ form.access_token }}
+                            {% if form.access_token.errors %}
+                                <div class="invalid-feedback d-block">{{ form.access_token.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-1">
+                                {{ form.access_token.help_text|safe }}
+                            </small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-key"></i> Conectează
+                            </button>
+                            <a href="{% url 'finance:bank_connections_list' %}" class="btn btn-secondary">
+                                Anulare
+                            </a>
+                        </div>
+                    </form>
+
+                    <div class="alert alert-info mt-4" role="alert">
+                        <h6><i class="fas fa-book"></i> Cum obții token-ul?</h6>
+                        <ul class="mb-0">
+                            <li><strong>Revolut:</strong> Settings → API → Create New Token</li>
+                            <li><strong>BT:</strong> Open Banking Portal → Generează token OAuth</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <a href="{% url 'finance:bank_connections_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Înapoi
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

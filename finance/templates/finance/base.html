@@ -62,7 +62,7 @@
         
         .stat-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            color: white !important;
             padding: 20px;
             border-radius: 8px;
             text-align: center;
@@ -70,21 +70,25 @@
         
         .stat-card.income {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white !important;
         }
         
         .stat-card.expense {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white !important;
         }
         
         .stat-card h3 {
             font-size: 14px;
             margin-bottom: 10px;
             opacity: 0.9;
+            color: white !important;
         }
         
         .stat-card .value {
             font-size: 24px;
             font-weight: bold;
+            color: white !important;
         }
         
         .btn-primary {
@@ -128,6 +132,23 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'finance:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'finance:bt_pay_live_dashboard' %}">
+                            <i class="bi bi-lightning-fill"></i> Live
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-success btn-sm" href="{% url 'finance:bank_connection_create' %}" style="color: white; margin: 0 10px;">
+                            <i class="bi bi-plus-circle-fill"></i> Conectare Cont
+                        </a>
+                    </li>
+                </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">

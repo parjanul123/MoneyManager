@@ -1,0 +1,47 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}Ștergere Conexiune Bancară{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmare Ștergere
+                    </h5>
+                    
+                    <p class="mt-3">
+                        Ești sigur că vrei să ștergi conexiunea?
+                    </p>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <strong>{{ connection.get_bank_display() }}</strong><br>
+                        {{ connection.account_name }}
+                    </div>
+                    
+                    <p class="text-muted">
+                        <small>
+                            ⚠️ Tranzacțiile sincronizate anterior vor rămâne în sistem.
+                        </small>
+                    </p>
+                    
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Șterge
+                            </button>
+                            <a href="{% url 'finance:bank_connections_list' %}" class="btn btn-secondary">
+                                Anulare
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

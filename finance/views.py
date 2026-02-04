@@ -36,12 +36,9 @@ def dashboard(request):
         date__gte=thirty_days_ago
     ).order_by('-date')[:10]
     
-    # Statistici venituri vs cheltuieli (luna curentă)
-    month_start = today.replace(day=1)
-    month_transactions = user.transactions.filter(date__gte=month_start)
-    
-    total_expenses = month_transactions.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
-    total_income = month_transactions.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0
+    # Statistici venituri vs cheltuieli - TOTAL ALL TIME
+    total_expenses = user.transactions.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
+    total_income = user.transactions.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0
     
     # Bugete
     current_month = today.replace(day=1)
@@ -78,6 +75,19 @@ def account_detail(request, pk):
         'transactions': transactions,
     }
     return render(request, 'finance/account_detail.html', context)
+
+
+@login_required
+def account_transactions(request, pk):
+    """Toate tranzacțiile pentru un anumit cont"""
+    account = get_object_or_404(Account, pk=pk, user=request.user)
+    transactions = account.transactions.all().order_by('-date')
+    
+    context = {
+        'account': account,
+        'transactions': transactions,
+    }
+    return render(request, 'finance/account_transactions.html', context)
 
 
 @login_required
