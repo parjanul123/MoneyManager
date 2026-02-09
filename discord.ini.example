@@ -2,7 +2,7 @@
 # Discord OAuth2 Configuration
 # Obții aceste valori de pe https://discord.com/developers/applications
 # 
-# Pași pentru setup:
+# Pași pentru setup OAuth:
 # 1. Mergi pe https://discord.com/developers/applications
 # 2. Creează o aplicație nouă
 # 3. Du-te la "OAuth2" -> "General"
@@ -23,6 +23,13 @@ SCOPES = identify,email,guilds
 # Prompt type - "consent" cere permisiunea mereu, "none" nu cere
 PROMPT = consent
 
-# Session settings
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SESSION_COOKIE_AGE = 1
+# Discord Webhook URL pentru notificări
+# Pași pentru setup Webhook:
+# 1. Mergi pe serverul Discord unde vrei să primești notificări
+# 2. Click dreapta pe un canal text -> "Manage Channel"
+# 3. Mergi la "Integrations" -> "Webhooks"
+# 4. Creează un webhook nou ("New Webhook")
+# 5. Copie URL-ul webhook mai jos (ar trebui să arate așa:
+#    https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN)
+# 6. Lasă gol dacă nu vrei notificări Discord
+WEBHOOK_URL = YOUR_WEBHOOK_URL_HERE

@@ -25,12 +25,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 config = configparser.ConfigParser()
 config_path = BASE_DIR / 'discord.ini'
 if config_path.exists():
-    config.read(config_path)
+    config.read(config_path, encoding='utf-8')
     DISCORD_CLIENT_ID = config.get('discord', 'CLIENT_ID', fallback='')
     DISCORD_CLIENT_SECRET = config.get('discord', 'CLIENT_SECRET', fallback='')
     DISCORD_REDIRECT_URL = config.get('discord', 'REDIRECT_URL', fallback='')
     DISCORD_SCOPES = config.get('discord', 'SCOPES', fallback='identify,email,guilds').split(',')
     DISCORD_PROMPT = config.get('discord', 'PROMPT', fallback='consent')
+    # Discord Webhook pentru notificări
+    DISCORD_WEBHOOK_URL = config.get('discord', 'WEBHOOK_URL', fallback='')
 else:
     # Valori default dacă nu găsește fișierul
     DISCORD_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID', '')
@@ -38,6 +40,7 @@ else:
     DISCORD_REDIRECT_URL = os.environ.get('DISCORD_REDIRECT_URL', '')
     DISCORD_SCOPES = ['identify', 'email', 'guilds']
     DISCORD_PROMPT = 'consent'
+    DISCORD_WEBHOOK_URL = os.environ.get('DISCORD_WEBHOOK_URL', '')
 
 
 # Quick-start development settings - unsuitable for production

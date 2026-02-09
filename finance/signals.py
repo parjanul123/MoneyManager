@@ -2,8 +2,15 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialAccount
-from .models import UserProfile, Transaction
+from .models import UserProfile, Transaction, Account, Budget
 from .supabase_sync import sync_user_to_supabase, sync_profile_to_supabase, log_user_activity, log_transaction_activity
+from .discord_notifications import (
+    notify_transaction_created,
+    notify_account_created,
+    notify_budget_created,
+    notify_user_joined,
+    notify_discord_connected,
+)
 
 
 @receiver(post_save, sender=User)
@@ -13,6 +20,8 @@ def create_user_profile(sender, instance, created, **kwargs):
         UserProfile.objects.get_or_create(user=instance)
         # Sync to Supabase
         sync_user_to_supabase(instance)
+        # Discord notification
+        notify_user_joined(instance)
 
 
 @receiver(post_save, sender=User)
@@ -58,6 +67,10 @@ def update_user_profile_from_discord(sender, instance, created, update_fields, *
             # Sync to Supabase
             sync_profile_to_supabase(profile)
             sync_user_to_supabase(user)
+            
+            # Discord notification (only on first connection)
+            if created:
+                notify_discord_connected(user)
         except Exception as e:
             print(f"Eroare actualizare profil Discord: {e}")
 
@@ -68,5 +81,27 @@ def log_transaction_to_supabase(sender, instance, created, **kwargs):
     if created:
         try:
             log_transaction_activity(instance.user, instance)
+            # Discord notification
+            notify_transaction_created(instance)
         except Exception as e:
             print(f"Eroare logging tranzacție: {e}")
+
+
+@receiver(post_save, sender=Account)
+def notify_account_creation(sender, instance, created, **kwargs):
+    """Send Discord notification when account is created"""
+    if created:
+        try:
+            notify_account_created(instance)
+        except Exception as e:
+            print(f"Eroare notificare cont Discord: {e}")
+
+
+@receiver(post_save, sender=Budget)
+def notify_budget_creation(sender, instance, created, **kwargs):
+    """Send Discord notification when budget is created"""
+    if created:
+        try:
+            notify_budget_created(instance)
+        except Exception as e:
+            print(f"Eroare notificare buget Discord: {e}")
