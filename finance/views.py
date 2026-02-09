@@ -371,6 +371,8 @@ def savings_delete(request, pk):
 @login_required
 def reports(request):
     """Rapoarte și analize"""
+    import json
+    
     user = request.user
     today = timezone.now().date()
     
@@ -398,7 +400,50 @@ def reports(request):
             income_by_category[category.name] = float(income)
     
     context = {
-        'expense_by_category': expense_by_category,
-        'income_by_category': income_by_category,
+        'expense_by_category': json.dumps(expense_by_category),
+        'income_by_category': json.dumps(income_by_category),
     }
     return render(request, 'finance/reports.html', context)
+
+
+def bank_api_tokens_doc(request):
+    """Afișează documentația pentru obținerea tokenurilor API bancare"""
+    from django.conf import settings
+    from pathlib import Path
+    
+    try:
+        doc_path = Path(settings.BASE_DIR) / 'BANK_API_TOKENS.md'
+        with open(doc_path, 'r', encoding='utf-8') as f:
+            markdown_content = f.read()
+        
+        # Convertire markdown simplu la HTML
+        import re
+        html = markdown_content
+        
+        # Headers
+        html = re.sub(r'^### (.*?)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+        html = re.sub(r'^## (.*?)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
+        html = re.sub(r'^# (.*?)$', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+        
+        # Links
+        html = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2" target="_blank">\1</a>', html)
+        
+        # Bold
+        html = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html)
+        html = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html)
+        
+        # Lists
+        html = re.sub(r'^\- (.*?)$', r'<li>\1</li>', html, flags=re.MULTILINE)
+        html = re.sub(r'(<li>.*?</li>)', r'<ul>\1</ul>', html, flags=re.DOTALL)
+        
+        # Code blocks
+        html = re.sub(r'```(.*?)```', r'<pre><code>\1</code></pre>', html, flags=re.DOTALL)
+        
+        # Line breaks
+        html = html.replace('\n\n', '</p><p>')
+        html = '<p>' + html + '</p>'
+        
+        return render(request, 'finance/doc_viewer.html', {'content': html})
+    except FileNotFoundError:
+        return render(request, 'finance/doc_viewer.html', {'content': '<p>Documentația nu a fost găsită.</p>'})
+

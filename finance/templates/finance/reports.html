@@ -42,14 +42,15 @@
 {% if expense_by_category or income_by_category %}
 <script>
     // Expense Chart
-    {% if expense_by_category %}
+    {% if expense_by_category and expense_by_category != '{}' %}
+    const expenseData = {{ expense_by_category|safe }};
     const expenseCtx = document.getElementById('expenseChart').getContext('2d');
     new Chart(expenseCtx, {
         type: 'doughnut',
         data: {
-            labels: {{ expense_by_category.keys|safe }},
+            labels: Object.keys(expenseData),
             datasets: [{
-                data: {{ expense_by_category.values|safe }},
+                data: Object.values(expenseData),
                 backgroundColor: [
                     '#ef4444', '#f97316', '#eab308', '#84cc16',
                     '#22c55e', '#10b981', '#14b8a6', '#06b6d4',
@@ -72,14 +73,15 @@
     {% endif %}
 
     // Income Chart
-    {% if income_by_category %}
+    {% if income_by_category and income_by_category != '{}' %}
+    const incomeData = {{ income_by_category|safe }};
     const incomeCtx = document.getElementById('incomeChart').getContext('2d');
     new Chart(incomeCtx, {
         type: 'doughnut',
         data: {
-            labels: {{ income_by_category.keys|safe }},
+            labels: Object.keys(incomeData),
             datasets: [{
-                data: {{ income_by_category.values|safe }},
+                data: Object.values(incomeData),
                 backgroundColor: [
                     '#10b981', '#059669', '#047857', '#065f46',
                     '#14b8a6', '#0d9488', '#0f766e', '#134e4a'

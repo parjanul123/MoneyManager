@@ -71,4 +71,7 @@ urlpatterns = [
     path('api/bt-pay/stream/', bt_pay_realtime.stream_bt_pay_events, name='api_bt_pay_stream'),
     path('api/bt-pay/hourly/', bt_pay_realtime.bt_pay_hourly_summary, name='api_bt_pay_hourly'),
     path('api/bt-pay/categories/', bt_pay_realtime.bt_pay_category_realtime, name='api_bt_pay_categories'),
+    
+    # Documentation
+    path('docs/bank-api-tokens/', views.bank_api_tokens_doc, name='bank_api_tokens_doc'),
 ]

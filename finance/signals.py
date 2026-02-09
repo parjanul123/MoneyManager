@@ -2,7 +2,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialAccount
-from .models import UserProfile
+from .models import UserProfile, Transaction
+from .supabase_sync import sync_user_to_supabase, sync_profile_to_supabase, log_user_activity, log_transaction_activity
 
 
 @receiver(post_save, sender=User)
@@ -10,6 +11,8 @@ def create_user_profile(sender, instance, created, **kwargs):
     """Crează profil utilizator la înregistrare"""
     if created:
         UserProfile.objects.get_or_create(user=instance)
+        # Sync to Supabase
+        sync_user_to_supabase(instance)
 
 
 @receiver(post_save, sender=User)
@@ -17,6 +20,8 @@ def save_user_profile(sender, instance, **kwargs):
     """Salvează profilul utilizatorului"""
     if hasattr(instance, 'profile'):
         instance.profile.save()
+        # Sync to Supabase
+        sync_profile_to_supabase(instance.profile)
 
 
 @receiver(post_save, sender=SocialAccount)
@@ -49,5 +54,19 @@ def update_user_profile_from_discord(sender, instance, created, update_fields, *
                 user.save()
             
             profile.save()
+            
+            # Sync to Supabase
+            sync_profile_to_supabase(profile)
+            sync_user_to_supabase(user)
         except Exception as e:
             print(f"Eroare actualizare profil Discord: {e}")
+
+
+@receiver(post_save, sender=Transaction)
+def log_transaction_to_supabase(sender, instance, created, **kwargs):
+    """Log transaction creation to Supabase"""
+    if created:
+        try:
+            log_transaction_activity(instance.user, instance)
+        except Exception as e:
+            print(f"Eroare logging tranzacție: {e}")

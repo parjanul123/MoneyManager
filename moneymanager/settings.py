@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 import configparser
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv(Path(__file__).resolve().parent.parent / '.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -127,12 +131,36 @@ except ImportError:
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Supabase PostgreSQL Configuration
+SUPABASE_DB_ENABLED = os.environ.get('SUPABASE_DB_ENABLED', 'False') == 'True'
+
+# TEMPORARY: Force SQLite while Supabase connection is tested
+SUPABASE_DB_ENABLED = False
+
+if SUPABASE_DB_ENABLED:
+    # Foloseste Supabase PostgreSQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('SUPABASE_DB_NAME', 'postgres'),
+            'USER': os.environ.get('SUPABASE_DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('SUPABASE_DB_PASSWORD', ''),
+            'HOST': os.environ.get('SUPABASE_DB_HOST', 'localhost'),
+            'PORT': os.environ.get('SUPABASE_DB_PORT', '5432'),
+            'CONN_MAX_AGE': 600,
+            'OPTIONS': {
+                'sslmode': 'require',
+            }
+        }
     }
-}
+else:
+    # Foloseşte SQLite local (development)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation

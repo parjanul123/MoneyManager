@@ -1,0 +1,105 @@
+{% extends "finance/base.html" %}
+
+{% block title %}Documentație - API Tokeni Bancare{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-book"></i> Ghid: Obținerea Tokenurilor API Bancare
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="doc-content">
+                        {{ content|safe }}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'finance:bank_connections_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Înapoi la Conturi Bancare
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .doc-content {
+        line-height: 1.8;
+        font-size: 16px;
+    }
+    
+    .doc-content h1 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-size: 2rem;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+    }
+    
+    .doc-content h2 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.8rem;
+        font-size: 1.5rem;
+        color: #0056b3;
+    }
+    
+    .doc-content h3 {
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+        color: #333;
+    }
+    
+    .doc-content a {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .doc-content a:hover {
+        text-decoration: underline;
+    }
+    
+    .doc-content strong {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .doc-content ul, .doc-content ol {
+        margin-left: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .doc-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .doc-content code {
+        background-color: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        color: #d63384;
+    }
+    
+    .doc-content pre {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+    
+    .doc-content pre code {
+        background-color: transparent;
+        color: #333;
+        padding: 0;
+    }
+</style>
+{% endblock %}
